@@ -192,6 +192,7 @@ path_vae_approx = get_dir_or_set_default('path_vae_approx', '../models/vae_appro
 path_upscale_models = get_dir_or_set_default('path_upscale_models', '../models/upscale_models/')
 path_inpaint = get_dir_or_set_default('path_inpaint', '../models/inpaint/')
 path_controlnet = get_dir_or_set_default('path_controlnet', '../models/controlnet/')
+path_ipadpter = get_dir_or_set_default('path_ipadapter', '../models/ipadapter/')
 path_clip_vision = get_dir_or_set_default('path_clip_vision', '../models/clip_vision/')
 path_fooocus_expansion = get_dir_or_set_default('path_fooocus_expansion', '../models/prompt_expansion/fooocus_expansion')
 path_wildcards = get_dir_or_set_default('path_wildcards', '../wildcards/')
@@ -655,18 +656,18 @@ def downloading_ip_adapters(v):
     if v == 'ip':
         load_file_from_url(
             url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus_sdxl_vit-h.bin',
-            model_dir=path_controlnet,
+            model_dir=path_ipadpter,
             file_name='ip-adapter-plus_sdxl_vit-h.bin'
         )
-        results += [os.path.join(path_controlnet, 'ip-adapter-plus_sdxl_vit-h.bin')]
+        results += [os.path.join(path_ipadpter, 'ip-adapter-plus_sdxl_vit-h.bin')]
 
     if v == 'face':
         load_file_from_url(
             url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin',
-            model_dir=path_controlnet,
+            model_dir=path_ipadpter,
             file_name='ip-adapter-plus-face_sdxl_vit-h.bin'
         )
-        results += [os.path.join(path_controlnet, 'ip-adapter-plus-face_sdxl_vit-h.bin')]
+        results += [os.path.join(path_ipadpter, 'ip-adapter-plus-face_sdxl_vit-h.bin')]
 
     return results
 
