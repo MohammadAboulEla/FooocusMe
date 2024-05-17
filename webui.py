@@ -91,7 +91,7 @@ def generate_clicked(task: worker.AsyncTask):
 
 reload_javascript()
 
-title = f'Fooocus {fooocus_version.version}'
+title = f'FooocusMe {fooocus_version.version}'
 
 if isinstance(args_manager.args.preset, str):
     title += ' ' + args_manager.args.preset
@@ -109,7 +109,7 @@ with shared.gradio_root:
                                               height=768, visible=False, elem_classes=['main_view', 'image_gallery'])
             progress_html = gr.HTML(value=modules.html.make_progress_html(32, 'Progress 32%'), visible=False,
                                     elem_id='progress-bar', elem_classes='progress-bar')
-            gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
+            gallery = gr.Gallery(label='Gallery', show_label=True, object_fit='contain', visible=True, height=768,
                                  elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
                                  elem_id='final_gallery')
             with gr.Row(elem_classes='type_row'):
@@ -266,7 +266,7 @@ with shared.gradio_root:
                     performance_selection = gr.Dropdown(label='Performance',
                                                      choices=flags.Performance.list(),
                                                      value=modules.config.default_performance, scale=1)
-                with gr.Accordion('Resolution'):
+                with gr.Accordion('Resolution',open=False):
                     aspect_ratios_selection = gr.Radio(label='Aspect Ratios', choices=modules.config.available_aspect_ratios,
                                                        value=modules.config.default_aspect_ratio, info='width × height',
                                                        elem_classes='aspect_ratios')
@@ -305,12 +305,11 @@ with shared.gradio_root:
                 def update_history_link():
                     if args_manager.args.disable_image_log:
                         return gr.update(value='')
-                    
+
                     return gr.update(value=f'<a href="file={get_current_html_path(output_format)}" target="_blank">\U0001F4DA History Log</a>')
 
                 history_link = gr.HTML()
                 shared.gradio_root.load(update_history_link, outputs=history_link, queue=False, show_progress=False)
-
             with gr.Tab(label='Style', elem_classes=['style_selections_tab']):
                 style_sorter.try_load_sorted_styles(
                     style_names=legal_style_names,
@@ -343,7 +342,6 @@ with shared.gradio_root:
                                                        queue=False,
                                                        show_progress=False).then(
                     lambda: None, _js='()=>{refresh_style_localization();}')
-
             with gr.Tab(label='Model'):
                 with gr.Group():
                     with gr.Row():
@@ -379,83 +377,86 @@ with shared.gradio_root:
                 with gr.Row():
                     refresh_files = gr.Button(label='Refresh', value='\U0001f504 Refresh All Files', variant='secondary', elem_classes='refresh_button')
             with gr.Tab(label='Advanced'):
-                guidance_scale = gr.Slider(label='Guidance Scale', minimum=1.0, maximum=30.0, step=0.01,
-                                           value=modules.config.default_cfg_scale,
-                                           info='Higher value means style is cleaner, vivider, and more artistic.')
-                sharpness = gr.Slider(label='Image Sharpness', minimum=0.0, maximum=30.0, step=0.001,
-                                      value=modules.config.default_sample_sharpness,
-                                      info='Higher value means image and texture are sharper.')
-                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Document</a>')
-                dev_mode = gr.Checkbox(label='Developer Debug Mode', value=False, container=False)
-
-                with gr.Column(visible=False) as dev_tools:
-                    with gr.Tab(label='Debug Tools'):
-                        adm_scaler_positive = gr.Slider(label='Positive ADM Guidance Scaler', minimum=0.1, maximum=3.0,
-                                                        step=0.001, value=1.5, info='The scaler multiplied to positive ADM (use 1.0 to disable). ')
-                        adm_scaler_negative = gr.Slider(label='Negative ADM Guidance Scaler', minimum=0.1, maximum=3.0,
-                                                        step=0.001, value=0.8, info='The scaler multiplied to negative ADM (use 1.0 to disable). ')
-                        adm_scaler_end = gr.Slider(label='ADM Guidance End At Step', minimum=0.0, maximum=1.0,
-                                                   step=0.001, value=0.3,
-                                                   info='When to end the guidance from positive/negative ADM. ')
-
-                        refiner_swap_method = gr.Dropdown(label='Refiner swap method', value=flags.refiner_swap_method,
-                                                          choices=['joint', 'separate', 'vae'])
-
-                        adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
-                                                 value=modules.config.default_cfg_tsnr,
-                                                 info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
-                                                      '(effective when real CFG > mimicked CFG).')
-                        sampler_name = gr.Dropdown(label='Sampler', choices=flags.sampler_list,
-                                                   value=modules.config.default_sampler)
-                        scheduler_name = gr.Dropdown(label='Scheduler', choices=flags.scheduler_list,
-                                                     value=modules.config.default_scheduler)
-
-                        generate_image_grid = gr.Checkbox(label='Generate Image Grid for Each Batch',
-                                                          info='(Experimental) This may cause performance problems on some computers and certain internet conditions.',
-                                                          value=False)
-
-                        overwrite_step = gr.Slider(label='Forced Overwrite of Sampling Step',
+                # gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Document</a>')
+                with gr.Column(visible=True) as dev_tools:
+                    with gr.Tab(label='Main Tools'):
+                        overwrite_step = gr.Slider(label='Step Overwrite',
                                                    minimum=-1, maximum=200, step=1,
                                                    value=modules.config.default_overwrite_step,
-                                                   info='Set as -1 to disable. For developer debugging.')
-                        overwrite_switch = gr.Slider(label='Forced Overwrite of Refiner Switch Step',
-                                                     minimum=-1, maximum=200, step=1,
-                                                     value=modules.config.default_overwrite_switch,
-                                                     info='Set as -1 to disable. For developer debugging.')
-                        overwrite_width = gr.Slider(label='Forced Overwrite of Generating Width',
-                                                    minimum=-1, maximum=2048, step=1, value=-1,
-                                                    info='Set as -1 to disable. For developer debugging. '
-                                                         'Results will be worse for non-standard numbers that SDXL is not trained on.')
-                        overwrite_height = gr.Slider(label='Forced Overwrite of Generating Height',
-                                                     minimum=-1, maximum=2048, step=1, value=-1,
-                                                     info='Set as -1 to disable. For developer debugging. '
-                                                          'Results will be worse for non-standard numbers that SDXL is not trained on.')
-                        overwrite_vary_strength = gr.Slider(label='Forced Overwrite of Denoising Strength of "Vary"',
-                                                            minimum=-1, maximum=1.0, step=0.001, value=-1,
-                                                            info='Set as negative number to disable. For developer debugging.')
-                        overwrite_upscale_strength = gr.Slider(label='Forced Overwrite of Denoising Strength of "Upscale"',
-                                                               minimum=-1, maximum=1.0, step=0.001, value=-1,
-                                                               info='Set as negative number to disable. For developer debugging.')
-                        disable_preview = gr.Checkbox(label='Disable Preview', value=False,
-                                                      info='Disable preview during generation.')
-                        disable_intermediate_results = gr.Checkbox(label='Disable Intermediate Results', 
-                                                      value=modules.config.default_performance == flags.Performance.EXTREME_SPEED.value,
-                                                      interactive=modules.config.default_performance != flags.Performance.EXTREME_SPEED.value,
-                                                      info='Disable intermediate results during generation, only show final gallery.')
-                        disable_seed_increment = gr.Checkbox(label='Disable seed increment',
-                                                             info='Disable automatic seed increment when image number is > 1.',
-                                                             value=False)
-                        read_wildcards_in_order = gr.Checkbox(label="Read wildcards in order", value=False)
+                                                   info='Set as -1 to disable.')
+                        guidance_scale = gr.Slider(label='Guidance Scale', minimum=1.0, maximum=30.0, step=0.01,
+                                                   value=modules.config.default_cfg_scale,
+                                                   info='Higher value means style is cleaner, vivider, and more artistic.')
+                        sharpness = gr.Slider(label='Image Sharpness', minimum=0.0, maximum=30.0, step=0.001,
+                                              value=modules.config.default_sample_sharpness,
+                                              info='Higher value means image and texture are sharper.')
 
-                        if not args_manager.args.disable_metadata:
-                            save_metadata_to_images = gr.Checkbox(label='Save Metadata to Images', value=modules.config.default_save_metadata_to_images,
-                                                                  info='Adds parameters to generated images allowing manual regeneration.')
-                            metadata_scheme = gr.Radio(label='Metadata Scheme', choices=flags.metadata_scheme, value=modules.config.default_metadata_scheme,
-                                                       info='Image Prompt parameters are not included. Use png and a1111 for compatibility with Civitai.',
-                                                       visible=modules.config.default_save_metadata_to_images)
+                        with gr.Accordion('Dev Tools', open=False):
+                            with gr.Row():
+                                sampler_name = gr.Dropdown(label='Sampler', choices=flags.sampler_list,
+                                                           value=modules.config.default_sampler)
+                                scheduler_name = gr.Dropdown(label='Scheduler', choices=flags.scheduler_list,
+                                                             value=modules.config.default_scheduler)
+                            with gr.Row():
+                                overwrite_width = gr.Number(label='Width Overwrite',
+                                                            minimum=-1, maximum=2048, step=1, value=-1,
+                                                            info='Set as -1 to disable.')
+                                overwrite_height = gr.Number(label='Height Overwrite',
+                                                             minimum=-1, maximum=2048, step=1, value=-1,
+                                                             info='Set as -1 to disable.')
+                            with gr.Column():
+                                adm_scaler_positive = gr.Slider(label='Positive ADM Guidance Scaler', minimum=0.1, maximum=3.0,
+                                                                step=0.001, value=1.5, info='The scaler multiplied to positive ADM (use 1.0 to disable). ')
+                                adm_scaler_negative = gr.Slider(label='Negative ADM Guidance Scaler', minimum=0.1, maximum=3.0,
+                                                                step=0.001, value=0.8, info='The scaler multiplied to negative ADM (use 1.0 to disable). ')
+                                adm_scaler_end = gr.Slider(label='ADM Guidance End At Step', minimum=0.0, maximum=1.0,
+                                                           step=0.001, value=0.3,
+                                                           info='When to end the guidance from positive/negative ADM. ')
 
-                            save_metadata_to_images.change(lambda x: gr.update(visible=x), inputs=[save_metadata_to_images], outputs=[metadata_scheme], 
-                                                           queue=False, show_progress=False)
+                                adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
+                                                         value=modules.config.default_cfg_tsnr,
+                                                         info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
+                                                              '(effective when real CFG > mimicked CFG).')
+                                refiner_swap_method = gr.Dropdown(label='Refiner swap method', value=flags.refiner_swap_method,
+                                                                  choices=['joint', 'separate', 'vae'])
+
+
+
+                                generate_image_grid = gr.Checkbox(label='Generate Image Grid for Each Batch',
+                                                                  info='(Experimental) This may cause performance problems on some computers and certain internet conditions.',
+                                                                  value=False)
+
+                                overwrite_switch = gr.Slider(label='Forced Overwrite of Refiner Switch Step',
+                                                             minimum=-1, maximum=200, step=1,
+                                                             value=modules.config.default_overwrite_switch,
+                                                             info='Set as -1 to disable. For developer debugging.')
+
+                                overwrite_vary_strength = gr.Slider(label='Forced Overwrite of Denoising Strength of "Vary"',
+                                                                    minimum=-1, maximum=1.0, step=0.001, value=-1,
+                                                                    info='Set as negative number to disable. For developer debugging.')
+                                overwrite_upscale_strength = gr.Slider(label='Forced Overwrite of Denoising Strength of "Upscale"',
+                                                                       minimum=-1, maximum=1.0, step=0.001, value=-1,
+                                                                       info='Set as negative number to disable. For developer debugging.')
+                                disable_preview = gr.Checkbox(label='Disable Preview', value=False,
+                                                              info='Disable preview during generation.')
+                                disable_intermediate_results = gr.Checkbox(label='Disable Intermediate Results',
+                                                              value=modules.config.default_performance == flags.Performance.EXTREME_SPEED.value,
+                                                              interactive=modules.config.default_performance != flags.Performance.EXTREME_SPEED.value,
+                                                              info='Disable intermediate results during generation, only show final gallery.')
+                                disable_seed_increment = gr.Checkbox(label='Disable seed increment',
+                                                                     info='Disable automatic seed increment when image number is > 1.',
+                                                                     value=False)
+                                read_wildcards_in_order = gr.Checkbox(label="Read wildcards in order", value=False)
+
+                                if not args_manager.args.disable_metadata:
+                                    save_metadata_to_images = gr.Checkbox(label='Save Metadata to Images', value=modules.config.default_save_metadata_to_images,
+                                                                          info='Adds parameters to generated images allowing manual regeneration.')
+                                    metadata_scheme = gr.Radio(label='Metadata Scheme', choices=flags.metadata_scheme, value=modules.config.default_metadata_scheme,
+                                                               info='Image Prompt parameters are not included. Use png and a1111 for compatibility with Civitai.',
+                                                               visible=modules.config.default_save_metadata_to_images)
+
+                                    save_metadata_to_images.change(lambda x: gr.update(visible=x), inputs=[save_metadata_to_images], outputs=[metadata_scheme],
+                                                                   queue=False, show_progress=False)
 
                     with gr.Tab(label='Control'):
                         debugging_cn_preprocessor = gr.Checkbox(label='Debug Preprocessors', value=False,
@@ -521,11 +522,11 @@ with shared.gradio_root:
                         freeu_s2 = gr.Slider(label='S2', minimum=0, maximum=4, step=0.01, value=0.95)
                         freeu_ctrls = [freeu_enabled, freeu_b1, freeu_b2, freeu_s1, freeu_s2]
 
-                def dev_mode_checked(r):
-                    return gr.update(visible=r)
-
-                dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
-                                queue=False, show_progress=False)
+                # def dev_mode_checked(r):
+                #     return gr.update(visible=r)
+                #
+                # dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
+                #                 queue=False, show_progress=False)
 
                 def refresh_files_clicked():
                     modules.config.update_files()
