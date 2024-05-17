@@ -168,7 +168,7 @@ with shared.gradio_root:
                                     ip_image = grh.Image(label='Image', source='upload', type='numpy', show_label=False, height=300)
                                     ip_images.append(ip_image)
                                     ip_ctrls.append(ip_image)
-                                    with gr.Column(visible=False) as ad_col:
+                                    with gr.Column(visible=True) as ad_col:
                                         with gr.Row():
                                             default_end, default_weight = flags.default_parameters[flags.default_ip]
 
@@ -308,8 +308,24 @@ with shared.gradio_root:
 
                     return gr.update(value=f'<a href="file={get_current_html_path(output_format)}" target="_blank">\U0001F4DA History Log</a>')
 
-                history_link = gr.HTML()
-                shared.gradio_root.load(update_history_link, outputs=history_link, queue=False, show_progress=False)
+                history_link = gr.HTML(visible=False)
+                #shared.gradio_root.load(update_history_link, outputs=history_link, queue=False, show_progress=False)
+
+                def open_folder():
+                    path = os.path.dirname(get_current_html_path(output_format))
+                    try:
+                        # Check if the path exists and is a directory
+                        if os.path.exists(path) and os.path.isdir(path):
+                            # Open the folder using the default file explorer
+                            os.startfile(path)
+                            return ""
+                        else:
+                            return "Invalid path or not a directory"
+                    except Exception as e:
+                        return str(e)
+                output_link = gr.Button(label='output folder', value='output folder')
+                output_link.click(open_folder)
+
             with gr.Tab(label='Style', elem_classes=['style_selections_tab']):
                 style_sorter.try_load_sorted_styles(
                     style_names=legal_style_names,
@@ -690,7 +706,7 @@ with shared.gradio_root:
             .then(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[generate_button, stop_button, skip_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
-            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+            .then(fn=lambda: None, _js='playNotification') #.then(fn=lambda: None, _js='refresh_grid_delayed')
 
         for notification_file in ['notification.ogg', 'notification.mp3']:
             if os.path.exists(notification_file):
